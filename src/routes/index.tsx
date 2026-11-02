@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { type Choices, type Option, buildCode, choiceOf, games, gameOf, pick, validateLogin } from "@/lib/codeplay";
+import { type Choices, type Option, buildCode, choiceOf, crearCuenta, games, gameOf, iniciarSesion, pick } from "@/lib/codeplay";
 import { CodePanel } from "@/components/codeplay/CodePanel";
 import { GamePreview } from "@/components/codeplay/GamePreview";
 
@@ -24,11 +24,21 @@ function App() {
 }
 
 function Login({ onLogin }: { onLogin: (u: string) => void }) {
-  const [u, setU] = useState(""), [p, setP] = useState(""), [err, setErr] = useState<string | null>(null);
+  const [modo, setModo] = useState<"entrar" | "crear">("entrar");
+  const [u, setU] = useState(""), [p, setP] = useState(""), [p2, setP2] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  const cambiar = (m: "entrar" | "crear") => { setModo(m); setErr(null); };
+  const enviar = () => {
+    const v = modo === "entrar" ? iniciarSesion(u, p) : crearCuenta(u, p, p2);
+    setErr(v);
+    if (!v) onLogin(u.trim());
+  };
+
   return (
-    <main className="grid min-h-screen place-items-center px-4">
+    <main className="grid min-h-screen place-items-center px-4 py-8">
       <form
-        onSubmit={(e) => { e.preventDefault(); const v = validateLogin(u, p); setErr(v); if (!v) onLogin(u.trim()); }}
+        onSubmit={(e) => { e.preventDefault(); enviar(); }}
         className="w-full max-w-sm space-y-5 rounded-3xl border-2 bg-card p-8 btn-3d shade-border"
       >
         <div className="text-center">
@@ -36,20 +46,39 @@ function Login({ onLogin }: { onLogin: (u: string) => void }) {
           <h1 className="mt-2 text-4xl font-bold text-primary">CodePlay Studio</h1>
           <p className="text-muted-foreground">Crea tu juego. Aprende a programar.</p>
         </div>
-        <Field label="Usuario" value={u} onChange={setU} />
-        <Field label="Contraseña" type="password" value={p} onChange={setP} />
+
+        <div role="tablist" aria-label="Acceso" className="grid grid-cols-2 gap-1 rounded-2xl border-2 bg-muted p-1">
+          {([["entrar", "Iniciar sesión"], ["crear", "Soy nuevo"]] as const).map(([m, label]) => (
+            <button key={m} type="button" role="tab" aria-selected={modo === m} onClick={() => cambiar(m)}
+              className={`rounded-xl px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${modo === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <Field label="Usuario" value={u} onChange={setU} autoComplete="username" />
+        <Field label="Contraseña" type="password" value={p} onChange={setP} autoComplete={modo === "entrar" ? "current-password" : "new-password"} />
+        {modo === "crear" && <Field label="Repite la contraseña" type="password" value={p2} onChange={setP2} autoComplete="new-password" />}
+
         {err && <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{err}</p>}
-        <BigButton type="submit" className="w-full">¡Entrar a crear!</BigButton>
+
+        <BigButton type="submit" className="w-full">{modo === "entrar" ? "Iniciar sesión" : "Crear cuenta y entrar"}</BigButton>
+
+        <p className="text-center text-xs text-muted-foreground">
+          {modo === "entrar"
+            ? "¿Es tu primera vez? Pulsa «Soy nuevo» para crear tu cuenta, o entra con demo · 1234."
+            : "Tu cuenta se guarda solo en este navegador."}
+        </p>
       </form>
     </main>
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function Field({ label, value, onChange, type = "text", autoComplete }: { label: string; value: string; onChange: (v: string) => void; type?: string; autoComplete?: string }) {
   return (
     <label className="block space-y-1">
       <span className="font-display font-semibold">{label}</span>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete}
         className="w-full rounded-2xl border-2 bg-muted px-4 py-3 text-lg outline-none focus:border-secondary" />
     </label>
   );
