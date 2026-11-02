@@ -56,9 +56,9 @@ function Login({ onLogin }: { onLogin: (u: string) => void }) {
           ))}
         </div>
 
-        <Field label="Usuario" value={u} onChange={setU} />
-        <Field label="Contraseña" type="password" value={p} onChange={setP} />
-        {modo === "crear" && <Field label="Repite la contraseña" type="password" value={p2} onChange={setP2} />}
+        <Field label="Usuario" value={u} onChange={setU} autoComplete="username" />
+        <Field label="Contraseña" type="password" value={p} onChange={setP} autoComplete={modo === "entrar" ? "current-password" : "new-password"} />
+        {modo === "crear" && <Field label="Repite la contraseña" type="password" value={p2} onChange={setP2} autoComplete="new-password" />}
 
         {err && <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{err}</p>}
 
@@ -74,11 +74,11 @@ function Login({ onLogin }: { onLogin: (u: string) => void }) {
   );
 }
 
-function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+function Field({ label, value, onChange, type = "text", autoComplete }: { label: string; value: string; onChange: (v: string) => void; type?: string; autoComplete?: string }) {
   return (
     <label className="block space-y-1">
       <span className="font-display font-semibold">{label}</span>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete}
         className="w-full rounded-2xl border-2 bg-muted px-4 py-3 text-lg outline-none focus:border-secondary" />
     </label>
   );
