@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCode, canMove, validateLogin } from "@/lib/codeplay";
+import { buildCode, canMove, crearCuenta, iniciarSesion, validateLogin } from "@/lib/codeplay";
 
 describe("CodePlay", () => {
   it("rejects short usernames", () => expect(validateLogin("ab", "1234")).not.toBeNull());
@@ -24,5 +24,28 @@ describe("CodePlay", () => {
   it("maze walls block movement", () => {
     expect(canMove(0, 0)).toBe(false);
     expect(canMove(2, 1)).toBe(true);
+  });
+});
+
+describe("Cuentas", () => {
+  it("crea una cuenta y deja entrar con ella", () => {
+    expect(crearCuenta("Xochitl", "1234", "1234")).toBeNull();
+    expect(iniciarSesion("xochitl", "1234")).toBeNull();
+  });
+  it("rechaza un usuario que ya existe", () => {
+    crearCuenta("kevin", "1234", "1234");
+    expect(crearCuenta("kevin", "1234", "1234")).not.toBeNull();
+  });
+  it("rechaza contraseñas que no coinciden", () =>
+    expect(crearCuenta("ana", "1234", "9999")).not.toBeNull());
+  it("avisa cuando el usuario no está registrado", () =>
+    expect(iniciarSesion("fantasma", "1234")).not.toBeNull());
+  it("rechaza la contraseña equivocada", () => {
+    crearCuenta("luis", "1234", "1234");
+    expect(iniciarSesion("luis", "9999")).not.toBeNull();
+  });
+  it("deja entrar al usuario demo solo con su contraseña", () => {
+    expect(iniciarSesion("demo", "1234")).toBeNull();
+    expect(iniciarSesion("demo", "0000")).not.toBeNull();
   });
 });
