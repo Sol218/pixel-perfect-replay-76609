@@ -38,11 +38,12 @@ export function GamePreview({ c }: { c: Choices }) {
     const loop = () => {
       const s = st.current;
       const map: [string, string, string, string] = c.movement === "wasd" ? ["w", "s", "a", "d"] : ["arrowup", "arrowdown", "arrowleft", "arrowright"];
-      const taps = map.map((key) => {
+      const take = (key: string) => {
         const n = pending.current[key] ?? 0;
         pending.current[key] = 0;
         return n;
-      });
+      };
+      const [tu, td, tl, tr] = [take(map[0]), take(map[1]), take(map[2]), take(map[3])];
       if (!s.over) {
         const k = keys.current, v = 4, tapStep = 10;
         if (c.movement !== "raton") {
@@ -50,8 +51,8 @@ export function GamePreview({ c }: { c: Choices }) {
           if (k.has(map[1])) s.p.y += v;
           if (k.has(map[2])) s.p.x -= v;
           if (k.has(map[3])) s.p.x += v;
-          s.p.y += (taps[1] - taps[0]) * tapStep;
-          s.p.x += (taps[3] - taps[2]) * tapStep;
+          s.p.y += (td - tu) * tapStep;
+          s.p.x += (tr - tl) * tapStep;
         }
         s.p.x = Math.max(0, Math.min(W - S, s.p.x));
         s.p.y = Math.max(0, Math.min(H - S, s.p.y));
