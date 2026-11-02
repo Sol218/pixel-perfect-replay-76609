@@ -1,5 +1,9 @@
 export type Option = { id: string; name: string; emoji: string; desc?: string; cls?: string; value?: number };
-export type Choices = { category?: string } & Record<string, string | undefined>;
+export type Choices = {
+  category?: string; hero?: string; enemy?: string; goal?: string; scene?: string; movement?: string; score?: string;
+  collision?: string; time?: string; dots?: string; shot?: string; rivals?: string; length?: string; topic?: string; points?: string;
+};
+export const choiceOf = (c: Choices, key: string) => (c as Record<string, string | undefined>)[key];
 export type Question = { key: string; title: string; options: Option[] };
 export type Stage = { label: string; title: string; sub: string; tip: string; questions: Question[] };
 export type GameDef = Option & { inspired: string; stages: Stage[] };
@@ -231,7 +235,7 @@ export const gameOf = (c: Choices) => find(games, c.category);
 /** Busca la opción elegida para una pregunta (por su key) del juego actual. */
 export function pick(c: Choices, key: string): Option | undefined {
   const g = gameOf(c);
-  for (const st of g?.stages ?? []) for (const q of st.questions) if (q.key === key) return find(q.options, c[key]);
+  for (const st of g?.stages ?? []) for (const q of st.questions) if (q.key === key) return find(q.options, choiceOf(c, key));
   return undefined;
 }
 
@@ -239,7 +243,7 @@ const keyMap: Record<string, [string, string, string, string]> = {
   flechas: ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"],
   wasd: ["w", "s", "a", "d"],
 };
-export const dirKeys = (m?: string) => keyMap[m ?? ""] ?? keyMap.flechas;
+export const dirKeys = (m?: string) => keyMap[m ?? ""] ?? (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"] as [string, string, string, string]);
 
 /* ---------- Código generado ---------- */
 export function buildCode(c: Choices, upTo: number): string {
