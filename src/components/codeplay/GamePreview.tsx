@@ -40,7 +40,7 @@ function useLoop(fn: () => void) {
 }
 
 function Frame({ boxRef, cls, hud, log, overlay, onRetry, children }: {
-  boxRef: RefObject<HTMLDivElement | null>; cls?: string; hud: ReactNode; log: string; overlay?: string | null; onRetry: () => void; children: ReactNode;
+  boxRef: RefObject<HTMLDivElement | null>; cls?: string | undefined; hud: ReactNode; log: string; overlay?: string | null; onRetry: () => void; children: ReactNode;
 }) {
   return (
     <div className="space-y-3">
@@ -135,8 +135,8 @@ function Platform({ c }: { c: Choices }) {
 }
 
 /* ---------- Laberinto (Pac-Man) ---------- */
-const COLS = MAZE[0].length, ROWS = MAZE.length;
-const findCell = (ch: string) => { for (let y = 0; y < ROWS; y++) { const x = MAZE[y].indexOf(ch); if (x >= 0) return { x, y }; } return { x: 1, y: 1 }; };
+const COLS = MAZE[0]!.length, ROWS = MAZE.length;
+const findCell = (ch: string) => { for (let y = 0; y < ROWS; y++) { const x = MAZE[y]!.indexOf(ch); if (x >= 0) return { x, y }; } return { x: 1, y: 1 }; };
 const wallCls: Record<string, string> = { neon: "border-2 border-secondary bg-secondary/20", setos: "bg-primary-shade rounded-sm", cueva: "bg-foreground/70 rounded" };
 function Maze({ c }: { c: Choices }) {
   const box = useRef<HTMLDivElement>(null);
@@ -160,7 +160,7 @@ function Maze({ c }: { c: Choices }) {
     if (i < 0) return;
     if (!s.start) s.start = performance.now();
     s.cool = 8;
-    const nx = s.p.x + dirs[i][0], ny = s.p.y + dirs[i][1];
+    const dv = dirs[i]!; const nx = s.p.x + dv[0]!, ny = s.p.y + dv[1]!;
     if (!canMove(nx, ny)) { setLog('if (mapa[fila][col] === "#") → ¡pared! no te mueves 🧱'); return; }
     s.p = { x: nx, y: ny };
     const key = `${nx},${ny}`;
@@ -173,7 +173,7 @@ function Maze({ c }: { c: Choices }) {
     <Frame boxRef={box} cls={pick(c, "scene")?.cls} log={log} overlay={s.end} onRetry={() => { st.current = init(); setLog("¡Otra vez!"); }}
       hud={<><span>⏱️ {Math.ceil(s.left)} s</span>{dotPts > 0 && <span>⭐ {s.pts}</span>}</>}>
       {MAZE.flatMap((row, y) => [...row].map((ch, x) =>
-        ch === "#" ? <div key={`${x}-${y}`} className={`absolute ${wallCls[scene] ?? wallCls.neon}`} style={cell(x, y)} />
+        ch === "#" ? <div key={`${x}-${y}`} className={`absolute ${wallCls[scene] ?? wallCls["neon"]}`} style={cell(x, y)} />
         : s.dots.has(`${x},${y}`) ? <div key={`${x}-${y}`} className="absolute grid place-items-center" style={cell(x, y)}><span className="size-1.5 rounded-full bg-accent" /></div> : null))}
       <div className="absolute grid place-items-center text-2xl" style={cell(goal.x, goal.y)}>{pick(c, "goal")?.emoji ?? "🏁"}</div>
       <div className="absolute grid place-items-center text-2xl transition-all duration-100" style={cell(s.p.x, s.p.y)}>{pick(c, "hero")?.emoji ?? "😮"}</div>
@@ -210,7 +210,7 @@ function Space({ c }: { c: Choices }) {
       const a = s.aliens.find((al) => hit(al, b, 0.7));
       if (a) { s.aliens = s.aliens.filter((x) => x !== a); s.bullets = s.bullets.filter((x) => x !== b); s.pts += 10; setLog("if (toca(bala, alien)) → eliminar(alien); puntos += 10 💥"); }
     }
-    if (s.aliens.length && Math.random() < 0.012 + s.wave * 0.004) { const a = s.aliens[Math.floor(Math.random() * s.aliens.length)]; s.bombs.push({ x: a.x, y: a.y + 20 }); }
+    if (s.aliens.length && Math.random() < 0.012 + s.wave * 0.004) { const a = s.aliens[Math.floor(Math.random() * s.aliens.length)]!; s.bombs.push({ x: a.x, y: a.y + 20 }); }
     s.bombs.forEach((b) => (b.y += 3));
     s.bombs = s.bombs.filter((b) => b.y < H);
     if (s.inv > 0) s.inv--;
@@ -243,10 +243,10 @@ function Race({ c }: { c: Choices }) {
   const box = useRef<HTMLDivElement>(null);
   const inp = useInput(box);
   const n = pick(c, "rivals")?.value ?? 2, goalD = pick(c, "length")?.value ?? 3000;
-  const lanes = [140, 200, 260, 320];
+  const lanes: number[] = [140, 200, 260, 320]; const lane = (i: number) => lanes[i] ?? 200;
   const init = () => ({
-    me: { x: lanes[0], d: 0, v: 0 }, count: 180, bump: 0, finished: [] as number[], end: null as string | null,
-    rivals: Array.from({ length: n }, (_, i) => ({ x: lanes[i + 1], tx: lanes[i + 1], d: 0, v: 0, top: 4.6 + Math.random() * 1.6 })),
+    me: { x: lane(0), d: 0, v: 0 }, count: 180, bump: 0, finished: [] as number[], end: null as string | null,
+    rivals: Array.from({ length: n }, (_, i) => ({ x: lane(i + 1), tx: lane(i + 1), d: 0, v: 0, top: 4.6 + Math.random() * 1.6 })),
   });
   const st = useRef(init());
   const [log, setLog] = useState("Haz clic en el juego. ↑ acelera, ↓ frena.");
@@ -264,7 +264,7 @@ function Race({ c }: { c: Choices }) {
     s.rivals.forEach((rv) => {
       rv.v = Math.min(rv.top, rv.v + 0.07);
       rv.d += rv.v;
-      if (Math.random() < 0.006) rv.tx = lanes[Math.floor(Math.random() * lanes.length)];
+      if (Math.random() < 0.006) rv.tx = lane(Math.floor(Math.random() * 4));
       rv.x += Math.sign(rv.tx - rv.x) * Math.min(1.5, Math.abs(rv.tx - rv.x));
     });
     if (s.bump > 0) s.bump--;
@@ -285,7 +285,7 @@ function Race({ c }: { c: Choices }) {
       hud={<><span>🏁 Lugar {place}/{n + 1}</span><span>{Math.round(me.v * 30)} km/h</span></>}>
       <div className="road absolute inset-y-0" style={{ left: `${(ROAD.x / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, backgroundPositionY: `${me.d % 40}px, 0` }} />
       {goalD - me.d < 260 && <div className="absolute h-3 bg-[repeating-linear-gradient(90deg,var(--foreground)_0_8px,var(--card)_8px_16px)]" style={{ left: `${(ROAD.x / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, top: `${((230 - (goalD - me.d)) / H) * 100}%` }} />}
-      {s.rivals.map((rv, i) => { const y = 230 - (rv.d - me.d); return y > -S && y < H ? <Sprite key={i} p={{ x: rv.x, y }} e={RIVAL_CARS[i]} size="text-3xl" /> : null; })}
+      {s.rivals.map((rv, i) => { const y = 230 - (rv.d - me.d); return y > -S && y < H ? <Sprite key={i} p={{ x: rv.x, y }} e={RIVAL_CARS[i] ?? "🚗"} size="text-3xl" /> : null; })}
       <Sprite p={{ x: me.x, y: 230 }} e={pick(c, "hero")?.emoji ?? "🏎️"} size="text-3xl" dim={s.bump > 0} />
       <div className="absolute inset-x-2 top-2 h-2 rounded-full bg-card/60"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (me.d / goalD) * 100)}%` }} /></div>
       {s.count > 0 && <div className="absolute inset-0 grid place-items-center font-display text-7xl font-bold text-accent">{Math.ceil(s.count / 60)}</div>}
@@ -307,7 +307,7 @@ function Trivia({ c }: { c: Choices }) {
   const [score, setScore] = useState({ pts: 0, ok: 0 });
   const [log, setLog] = useState("Elige la respuesta antes de que se acabe el reloj.");
   const done = i >= qs.length;
-  const q = qs[i];
+  const q = qs[i]!;
   useEffect(() => {
     if (done || picked) return;
     if (left <= 0) { setPicked("⏰"); setLog("if (reloj === 0) → siguientePregunta() ⏰"); return; }
@@ -329,7 +329,7 @@ function Trivia({ c }: { c: Choices }) {
   return (
     <Frame boxRef={box} cls={pick(c, "scene")?.cls} log={log} overlay={done ? `${pick(c, "hero")?.emoji} ${score.ok}/${qs.length} correctas · ${score.pts} puntos` : null} onRetry={retry}
       hud={<><span>⭐ {score.pts} puntos</span><span>Pregunta {Math.min(i + 1, qs.length)}/{qs.length}</span></>}>
-      {q && (
+      {!done && (
         <div className="absolute inset-0 flex flex-col gap-2 p-3">
           <div className="h-3 overflow-hidden rounded-full bg-card/50"><div className={`h-full ${left < 4 ? "bg-destructive" : "bg-accent"}`} style={{ width: `${(left / limit) * 100}%` }} /></div>
           <div className="flex items-center gap-3 rounded-2xl bg-card p-3 text-card-foreground">

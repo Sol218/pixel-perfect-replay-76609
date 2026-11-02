@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  type Choices, type Option, buildCode, categories, collisions, enemies, find, heroes,
-  movements, scenes, scoring, validateLogin,
-} from "@/lib/codeplay";
+import { type Choices, type Option, buildCode, choiceOf, games, gameOf, pick, validateLogin } from "@/lib/codeplay";
 import { CodePanel } from "@/components/codeplay/CodePanel";
 import { GamePreview } from "@/components/codeplay/GamePreview";
 
@@ -20,14 +17,6 @@ export const Route = createFileRoute("/")({
   }),
   component: App,
 });
-
-const steps = ["Categoría", "Personajes", "Escena", "Acciones", "¡Prueba!"];
-const tips = [
-  "Una variable es como una caja con etiqueta: guarda un dato para usarlo después.",
-  "Un objeto agrupa varios datos sobre una misma cosa, como tu héroe: nombre, posición, vidas…",
-  "Tu escena también es un objeto con propiedades: su mundo y su tamaño.",
-  "Los eventos escuchan al teclado o al ratón. Los condicionales (if) deciden qué pasa: SI toca algo → ENTONCES…",
-];
 
 function App() {
   const [user, setUser] = useState<string | null>(null);
@@ -98,11 +87,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
   const [step, setStep] = useState(0);
   const [c, setC] = useState<Choices>({});
-  const set = (k: keyof Choices) => (id: string) => setC((x) => ({ ...x, [k]: id }));
-  const ready = [
-    !!c.category, !!c.hero && !!c.enemy, !!c.scene, !!c.movement && !!c.score && !!c.collision, true,
-  ][step];
+  const g = gameOf(c);
+  const steps = ["Juego", ...(g?.stages.map((s) => s.label) ?? ["Personajes", "Escena", "Reglas"]), "¡Prueba!"];
+  const stage = step > 0 && step < 4 ? g?.stages[step - 1] : undefined;
+  const ready = step === 0 ? !!g : stage ? stage.questions.every((q) => !!choiceOf(c, q.key)) : true;
   const code = buildCode(c, step === 4 ? 4 : step + 1);
+  const tip = step === 0 ? "Una variable es como una caja con etiqueta: guarda un dato para usarlo después." : stage?.tip;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -110,7 +100,7 @@ function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
         <span className="font-display text-2xl font-bold text-primary">🎮 CodePlay</span>
         <div className="flex flex-1 gap-2">
           {steps.map((s, i) => (
-            <div key={s} className="flex-1">
+            <div key={i} className="flex-1">
               <div className={`h-4 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`} />
               <span className={`hidden text-xs font-bold sm:block ${i === step ? "text-primary" : "text-muted-foreground"}`}>{i + 1}. {s}</span>
             </div>
@@ -122,28 +112,20 @@ function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
       {step < 4 ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <div className="space-y-6 rounded-3xl border-2 bg-card p-6">
-            {step === 0 && <>
-              <Head n={1} title="¿Qué tipo de juego quieres crear?" sub="Elige un género para empezar." />
-              <Cards items={categories} value={c.category} onPick={set("category")} />
+            {step === 0 ? <>
+              <Head n={1} title="¿Qué tipo de juego quieres crear?" sub="Cada género tiene sus propias reglas, como los juegos famosos." />
+              <Cards items={games.map((x) => ({ ...x, desc: `Como ${x.inspired}` }))} value={c.category} onPick={(id) => setC({ category: id })} />
+            </> : stage && <>
+              <Head n={step + 1} title={stage.title} sub={stage.sub} />
+              {stage.questions.map((q) => (
+                <Section key={q.key} title={q.title}>
+                  <Cards items={q.options} value={choiceOf(c, q.key)} onPick={(id) => setC((x) => ({ ...x, [q.key]: id }))} renderBg={(o) => o.cls ?? ""} />
+                </Section>
+              ))}
             </>}
-            {step === 1 && <>
-              <Head n={2} title="Elige a tus personajes" sub="Tu héroe y su rival se guardarán en variables y objetos." />
-              <Section title="Protagonista"><Cards items={heroes} value={c.hero} onPick={set("hero")} /></Section>
-              <Section title="Enemigo u obstáculo"><Cards items={enemies} value={c.enemy} onPick={set("enemy")} /></Section>
-            </>}
-            {step === 2 && <>
-              <Head n={3} title="¿Dónde ocurre la aventura?" sub="Escoge el mundo de tu juego." />
-              <Cards items={scenes} value={c.scene} onPick={set("scene")} renderBg={(o) => o.cls} />
-            </>}
-            {step === 3 && <>
-              <Head n={4} title="Reglas del juego" sub="Aquí aprendes eventos y condicionales." />
-              <Section title="¿Cómo se mueve tu héroe?"><Cards items={movements} value={c.movement} onPick={set("movement")} /></Section>
-              <Section title="¿Cómo gana puntos?"><Cards items={scoring} value={c.score} onPick={set("score")} /></Section>
-              <Section title="¿Qué pasa al chocar con el enemigo?"><Cards items={collisions} value={c.collision} onPick={set("collision")} /></Section>
-            </>}
-            <Nav step={step} setStep={setStep} ready={!!ready} />
+            <Nav step={step} setStep={setStep} ready={ready} />
           </div>
-          <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-6rem)]"><CodePanel code={code} tip={tips[step]} /></div>
+          <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-6rem)]"><CodePanel code={code} tip={tip} /></div>
         </div>
       ) : (
         <Final c={c} code={code} onBack={() => setStep(3)} onRestart={() => { setC({}); setStep(0); }} />
@@ -171,29 +153,31 @@ function Nav({ step, setStep, ready }: { step: number; setStep: (n: number) => v
   );
 }
 
+const howTo: Record<string, string> = {
+  plataformas: "Haz clic en el juego. Camina con ← → y salta con ↑ o espacio. ¡Llega a la bandera!",
+  laberinto: "Haz clic en el juego y muévete casilla por casilla hasta la meta antes de que acabe el tiempo.",
+  espacial: "Haz clic en el juego. Muévete con ← → y dispara con espacio.",
+  carreras: "Haz clic en el juego. ↑ acelera, ↓ frena, ← → cambia de carril. ¡Llega primero!",
+  trivia: "Haz clic en la respuesta correcta antes de que el reloj llegue a 0.",
+};
+
 function Final({ c, code, onBack, onRestart }: { c: Choices; code: string; onBack: () => void; onRestart: () => void }) {
-  const summary = [
-    ["Juego", find(categories, c.category)], ["Héroe", find(heroes, c.hero)], ["Enemigo", find(enemies, c.enemy)],
-    ["Mundo", find(scenes, c.scene)], ["Movimiento", find(movements, c.movement)], ["Puntos", find(scoring, c.score)],
-    ["Al chocar", find(collisions, c.collision)],
-  ] as const;
+  const g = gameOf(c);
+  const qs = g?.stages.flatMap((s) => s.questions) ?? [];
+  const wasd = c.movement === "wasd" ? " (usa W A S D en vez de flechas)" : "";
   return (
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-4xl font-bold">🎉 ¡Tu juego está listo!</h2>
-        <p className="text-muted-foreground">Pruébalo: cada cosa que pasa es una línea de tu código.</p>
+        <p className="text-muted-foreground">{g?.emoji} {g?.name}, inspirado en {g?.inspired}. Cada cosa que pasa es una línea de tu código.</p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
-        {summary.map(([k, o]) => (
-          <span key={k} className="rounded-full border-2 bg-card px-4 py-2 text-sm"><b>{k}:</b> {o?.emoji} {o?.name}</span>
-        ))}
+        {qs.map((q) => { const o = pick(c, q.key); return <span key={q.key} className="rounded-full border-2 bg-card px-4 py-2 text-sm"><b>{q.title}:</b> {o?.emoji} {o?.name}</span>; })}
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border-2 bg-card p-5">
           <h3 className="mb-1 text-xl font-semibold">Vista previa</h3>
-          <p className="mb-3 text-sm text-muted-foreground">
-            {c.movement === "raton" ? "Mueve el ratón sobre el juego." : "Haz clic en el juego y usa " + (c.movement === "wasd" ? "W A S D." : "las flechas.")}
-          </p>
+          <p className="mb-3 text-sm text-muted-foreground">{(c.category && howTo[c.category]) ?? ""}{c.category !== "trivia" ? wasd : ""}</p>
           <GamePreview c={c} />
         </div>
         <div className="h-[560px]"><CodePanel code={code} tip="Este es el código completo de tu juego, con comentarios." /></div>
