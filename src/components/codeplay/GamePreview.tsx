@@ -35,7 +35,7 @@ export function GamePreview({ c }: { c: Choices }) {
       const s = st.current;
       if (!s.over) {
         const k = keys.current, v = 4;
-        const map = c.movement === "wasd" ? ["w", "s", "a", "d"] : ["arrowup", "arrowdown", "arrowleft", "arrowright"];
+        const map: [string, string, string, string] = c.movement === "wasd" ? ["w", "s", "a", "d"] : ["arrowup", "arrowdown", "arrowleft", "arrowright"];
         if (c.movement !== "raton") {
           if (k.has(map[0])) s.p.y -= v;
           if (k.has(map[1])) s.p.y += v;

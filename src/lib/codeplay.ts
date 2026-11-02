@@ -104,7 +104,7 @@ export function buildCode(c: Choices, upTo: number): string {
       lines.push('document.addEventListener("mousemove", (e) => {');
       lines.push("  jugador.x = e.offsetX;  // sigue al ratón", "  jugador.y = e.offsetY;", "});");
     } else if (mv) {
-      const [u, d, l, r] = keyMap[mv.id];
+      const [u, d, l, r] = keyMap[mv.id] ?? [];
       lines.push('document.addEventListener("keydown", (e) => {');
       lines.push(`  if (e.key === "${u}") jugador.y -= 10;  // arriba`);
       lines.push(`  if (e.key === "${d}") jugador.y += 10;  // abajo`);
