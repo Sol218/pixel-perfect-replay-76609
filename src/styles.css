@@ -103,3 +103,18 @@
 @utility scene-ciber { background: linear-gradient(180deg, oklch(0.3 0.12 300), oklch(0.45 0.2 340)); }
 @utility scene-oceano { background: linear-gradient(180deg, oklch(0.8 0.1 220), oklch(0.4 0.13 245)); }
 @utility scene-castillo { background: linear-gradient(180deg, oklch(0.75 0.08 60), oklch(0.45 0.05 40)); }
+@utility scene-pradera { background: linear-gradient(180deg, oklch(0.82 0.11 230) 0%, oklch(0.9 0.07 220) 70%, oklch(0.62 0.15 140) 70%); }
+@utility scene-subterraneo { background: linear-gradient(180deg, oklch(0.2 0.03 260), oklch(0.28 0.05 240)); }
+@utility scene-neon { background: oklch(0.13 0.02 270); }
+@utility scene-setos { background: oklch(0.82 0.08 120); }
+@utility scene-cueva { background: oklch(0.35 0.03 50); }
+@utility scene-nebulosa { background: radial-gradient(circle at 70% 30%, oklch(0.55 0.2 340), oklch(0.25 0.1 300) 50%, oklch(0.12 0.04 270)); }
+@utility scene-planeta { background: radial-gradient(circle at 85% 15%, oklch(0.8 0.12 75) 0 12%, oklch(0.18 0.05 260) 13%); }
+@utility scene-circuito { background: oklch(0.65 0.15 140); }
+@utility scene-desierto { background: oklch(0.8 0.11 75); }
+@utility scene-nieve { background: oklch(0.96 0.01 230); }
+@utility scene-noche { background: oklch(0.22 0.06 280); }
+@utility scene-show { background: radial-gradient(circle at 50% 0%, oklch(0.6 0.2 330), oklch(0.3 0.14 300)); }
+@utility scene-aula { background: linear-gradient(180deg, oklch(0.4 0.07 160), oklch(0.32 0.06 160)); }
+@utility scene-ruleta { background: conic-gradient(oklch(0.7 0.18 25), oklch(0.8 0.16 80), oklch(0.72 0.17 140), oklch(0.65 0.15 245), oklch(0.6 0.18 310), oklch(0.7 0.18 25)); }
+@utility road { background: repeating-linear-gradient(180deg, oklch(0.95 0 0) 0 20px, transparent 20px 40px) center / 4px 100% no-repeat, oklch(0.35 0.01 260); }
