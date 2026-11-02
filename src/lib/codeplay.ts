@@ -16,6 +16,50 @@ export function validateLogin(user: string, pass: string): string | null {
   return null;
 }
 
+/* ---------- Cuentas (se guardan solo en este navegador) ---------- */
+const CUENTAS_KEY = "codeplay-cuentas";
+export const DEMO = { user: "demo", pass: "1234" };
+
+type Cuentas = Record<string, string>;
+
+function leerCuentas(): Cuentas {
+  try {
+    const data = JSON.parse(localStorage.getItem(CUENTAS_KEY) ?? "{}");
+    return data && typeof data === "object" ? (data as Cuentas) : {};
+  } catch {
+    return {};
+  }
+}
+
+function guardarCuentas(c: Cuentas) {
+  try {
+    localStorage.setItem(CUENTAS_KEY, JSON.stringify(c));
+  } catch {
+    /* sin almacenamiento disponible */
+  }
+}
+
+export function crearCuenta(user: string, pass: string, confirm: string): string | null {
+  const u = user.trim().toLowerCase();
+  const err = validateLogin(u, pass);
+  if (err) return err;
+  if (pass !== confirm) return "Las contraseñas no coinciden.";
+  const cuentas = leerCuentas();
+  if (u === DEMO.user || cuentas[u] !== undefined) return "Ese usuario ya existe. Inicia sesión.";
+  guardarCuentas({ ...cuentas, [u]: pass });
+  return null;
+}
+
+export function iniciarSesion(user: string, pass: string): string | null {
+  const u = user.trim().toLowerCase();
+  const err = validateLogin(u, pass);
+  if (err) return err;
+  if (u === DEMO.user) return pass === DEMO.pass ? null : `La contraseña de ${DEMO.user} es ${DEMO.pass}.`;
+  const guardada = leerCuentas()[u];
+  if (guardada === undefined) return "No encontramos ese usuario. Crea tu cuenta.";
+  return guardada === pass ? null : "La contraseña no coincide.";
+}
+
 /* ---------- Opciones compartidas ---------- */
 const movement: Question = {
   key: "movement", title: "¿Con qué teclas juegas?",

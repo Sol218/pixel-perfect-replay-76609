@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { type Choices, type Option, buildCode, choiceOf, games, gameOf, pick, validateLogin } from "@/lib/codeplay";
+import { type Choices, type Option, buildCode, choiceOf, crearCuenta, games, gameOf, iniciarSesion, pick, validateLogin } from "@/lib/codeplay";
 import { CodePanel } from "@/components/codeplay/CodePanel";
 import { GamePreview } from "@/components/codeplay/GamePreview";
 
