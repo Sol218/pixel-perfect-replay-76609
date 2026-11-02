@@ -13,6 +13,7 @@ export function GamePreview({ c }: { c: Choices }) {
   const sc = find(scoring, c.score)!;
   const boxRef = useRef<HTMLDivElement>(null);
   const keys = useRef<Set<string>>(new Set());
+  const pending = useRef<Record<string, number>>({});
   const st = useRef({ p: { x: 40, y: 130 }, e: { x: 400, y: 40 }, ev: { x: 2, y: 1.6 }, item: rnd(), pts: 0, lives: 3, over: false, inv: 0 });
   const [, tick] = useState(0);
   const [log, setLog] = useState("¡Haz clic en el juego y muévete!");
@@ -24,8 +25,11 @@ export function GamePreview({ c }: { c: Choices }) {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && document.activeElement === boxRef.current) e.preventDefault();
-      keys.current.add(e.key.toLowerCase());
+      const k = e.key.toLowerCase();
+      if (k.startsWith("arrow") && document.activeElement === boxRef.current) e.preventDefault();
+      // each physical tap counts, even when it lands between two animation frames
+      if (!e.repeat) pending.current[k] = (pending.current[k] ?? 0) + 1;
+      keys.current.add(k);
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener("keydown", down);
@@ -33,14 +37,22 @@ export function GamePreview({ c }: { c: Choices }) {
     let raf = 0;
     const loop = () => {
       const s = st.current;
+      const map: [string, string, string, string] = c.movement === "wasd" ? ["w", "s", "a", "d"] : ["arrowup", "arrowdown", "arrowleft", "arrowright"];
+      const take = (key: string) => {
+        const n = pending.current[key] ?? 0;
+        pending.current[key] = 0;
+        return n;
+      };
+      const [tu, td, tl, tr] = [take(map[0]), take(map[1]), take(map[2]), take(map[3])];
       if (!s.over) {
-        const k = keys.current, v = 4;
-        const map: [string, string, string, string] = c.movement === "wasd" ? ["w", "s", "a", "d"] : ["arrowup", "arrowdown", "arrowleft", "arrowright"];
+        const k = keys.current, v = 4, tapStep = 10;
         if (c.movement !== "raton") {
           if (k.has(map[0])) s.p.y -= v;
           if (k.has(map[1])) s.p.y += v;
           if (k.has(map[2])) s.p.x -= v;
           if (k.has(map[3])) s.p.x += v;
+          s.p.y += (td - tu) * tapStep;
+          s.p.x += (tr - tl) * tapStep;
         }
         s.p.x = Math.max(0, Math.min(W - S, s.p.x));
         s.p.y = Math.max(0, Math.min(H - S, s.p.y));
