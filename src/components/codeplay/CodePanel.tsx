@@ -9,7 +9,7 @@ function highlight(line: string) {
   );
 }
 
-export function CodePanel({ code, tip }: { code: string; tip?: string }) {
+export function CodePanel({ code, tip }: { code: string; tip?: string | undefined }) {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-code text-code-foreground">
       <div className="flex items-center gap-2 border-b border-code-foreground/10 px-4 py-3">

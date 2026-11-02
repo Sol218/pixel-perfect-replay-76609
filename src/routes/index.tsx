@@ -73,7 +73,7 @@ function BigButton({ variant = "primary", className = "", ...props }: React.Butt
   return <button {...props} className={`btn-3d rounded-2xl px-6 py-3 font-display text-lg font-semibold uppercase tracking-wide ${v} ${className}`} />;
 }
 
-function Cards<T extends Option>({ items, value, onPick, renderBg }: { items: T[]; value?: string; onPick: (id: string) => void; renderBg?: (o: T) => string }) {
+function Cards<T extends Option>({ items, value, onPick, renderBg }: { items: T[]; value?: string | undefined; onPick: (id: string) => void; renderBg?: (o: T) => string }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {items.map((o) => {
@@ -141,7 +141,7 @@ function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
               <Section title="¿Cómo gana puntos?"><Cards items={scoring} value={c.score} onPick={set("score")} /></Section>
               <Section title="¿Qué pasa al chocar con el enemigo?"><Cards items={collisions} value={c.collision} onPick={set("collision")} /></Section>
             </>}
-            <Nav step={step} setStep={setStep} ready={ready} />
+            <Nav step={step} setStep={setStep} ready={!!ready} />
           </div>
           <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-6rem)]"><CodePanel code={code} tip={tips[step]} /></div>
         </div>
