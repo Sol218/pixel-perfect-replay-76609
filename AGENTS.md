@@ -11,5 +11,5 @@
 
 # Rules
 
-- Login and registration are client-side only: accounts live in this browser's localStorage, and the built-in `demo` / `1234` account is always available. Why: the brief asked for a practice app without real accounts; switch to Lovable Cloud logins if real accounts are ever needed.
-- All account rules (minimum lengths, duplicate users, password confirmation, wrong password) are enforced in `src/lib/codeplay.ts` and covered by tests in `src/test/codeplay.test.ts`. Why: the game rules per category are the app's teaching contract and must not drift.
+- Login and registration stay client-side: accounts live in this browser's storage and the built-in `demo` / `1234` account always works. Why: the brief asked for a practice app without real accounts; move to Lovable Cloud logins only if real accounts are requested.
+- Account rules (minimum lengths, duplicate users, password confirmation, wrong password) live in `src/lib/codeplay.ts` and are covered by `src/test/codeplay.test.ts`. Why: these rules and the per-category game rules are the app's teaching contract and must not drift silently.
