@@ -50,7 +50,7 @@ function Login({ onLogin }: { onLogin: (u: string) => void }) {
         <div role="tablist" aria-label="Acceso" className="grid grid-cols-2 gap-1 rounded-2xl border-2 bg-muted p-1">
           {([["entrar", "Iniciar sesión"], ["crear", "Soy nuevo"]] as const).map(([m, label]) => (
             <button key={m} type="button" role="tab" aria-selected={modo === m} onClick={() => cambiar(m)}
-              className={`rounded-xl px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${modo === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`rounded-xl px-3 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${modo === m ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>
               {label}
             </button>
           ))}
