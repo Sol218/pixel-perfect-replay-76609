@@ -119,7 +119,7 @@ function CodeCards({ q, value, onPick }: { q: Question; value?: string | undefin
           <button key={o.id} type="button" onClick={() => onPick(o.id)} aria-pressed={on}
             className={`btn-3d min-w-0 overflow-hidden rounded-2xl border-2 text-left transition-colors ${on ? "border-secondary shade-secondary" : "shade-border hover:border-secondary/60"}`}>
             <pre className="overflow-x-auto bg-code px-3 py-3 font-mono text-xs leading-5 text-code-foreground sm:text-[13px]">
-              <span className="text-code-keyword">let </span>{s.code.split("//")[0]}<span className="text-code-comment">//{s.code.split("//")[1]}</span>
+              {!s.code.split("=")[0]!.includes(".") && <span className="text-code-keyword">let </span>}{s.code.split("//")[0]}<span className="text-code-comment">//{s.code.split("//")[1]}</span>
             </pre>
             <div className={`flex gap-2 p-3 text-sm ${on ? "bg-secondary/10" : "bg-card"}`}>
               <span className="shrink-0">{on ? "✅" : "💬"}</span>
