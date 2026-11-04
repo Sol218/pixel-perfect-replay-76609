@@ -64,7 +64,30 @@ function Frame({ boxRef, cls, hud, log, overlay, onRetry, children }: {
 const Sprite = ({ p, e, size = "text-2xl", dim }: { p: P; e: string; size?: string; dim?: boolean }) =>
   <span className={`absolute leading-none ${size} ${dim ? "opacity-50" : ""}`} style={pos(p)}>{e}</span>;
 
+function TouchPad({ c }: { c: Choices }) {
+  const [u, d, l, r] = dirKeys(c.movement);
+  const send = (type: "keydown" | "keyup", key: string) => window.dispatchEvent(new KeyboardEvent(type, { key }));
+  const Btn = ({ k, label, cls = "" }: { k: string; label: string; cls?: string }) => (
+    <button type="button" aria-label={label} onPointerDown={(e) => { e.preventDefault(); send("keydown", k); }}
+      onPointerUp={() => send("keyup", k)} onPointerLeave={() => send("keyup", k)} onContextMenu={(e) => e.preventDefault()}
+      className={`btn-3d shade-border grid size-12 touch-none select-none place-items-center rounded-xl border-2 bg-card font-display text-lg ${cls}`}>{label}</button>
+  );
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3 lg:hidden" aria-label="Controles táctiles">
+      <div className="grid grid-cols-3 gap-1">
+        <span /><Btn k={u} label="↑" /><span />
+        <Btn k={l} label="←" /><Btn k={d} label="↓" /><Btn k={r} label="→" />
+      </div>
+      <Btn k=" " label="⎵" cls="w-24" />
+    </div>
+  );
+}
+
 export function GamePreview({ c }: { c: Choices }) {
+  return <div>{GameOnly({ c })}{c.category && c.category !== "trivia" && <TouchPad c={c} />}</div>;
+}
+
+function GameOnly({ c }: { c: Choices }) {
   const k = JSON.stringify(c);
   switch (c.category) {
     case "plataformas": return <Platform key={k} c={c} />;

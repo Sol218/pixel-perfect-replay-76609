@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { type Choices, type Option, buildCode, choiceOf, crearCuenta, games, gameOf, iniciarSesion, pick } from "@/lib/codeplay";
+import { type Choices, type Option, type Question, buildCode, choiceOf, crearCuenta, games, gameOf, iniciarSesion, pick, snippetFor, withDefaults } from "@/lib/codeplay";
 import { CodePanel } from "@/components/codeplay/CodePanel";
 import { GamePreview } from "@/components/codeplay/GamePreview";
 
@@ -39,7 +39,7 @@ function Login({ onLogin }: { onLogin: (u: string) => void }) {
     <main className="grid min-h-screen place-items-center px-4 py-8">
       <form
         onSubmit={(e) => { e.preventDefault(); enviar(); }}
-        className="w-full max-w-sm space-y-5 rounded-3xl border-2 bg-card p-8 btn-3d shade-border"
+        className="w-full max-w-sm space-y-5 rounded-3xl border-2 bg-card p-5 sm:p-8 btn-3d shade-border"
       >
         <div className="text-center">
           <div className="text-6xl">🎮</div>
@@ -109,6 +109,29 @@ function Cards<T extends Option>({ items, value, onPick, renderBg }: { items: T[
   );
 }
 
+function CodeCards({ q, value, onPick }: { q: Question; value?: string | undefined; onPick: (id: string) => void }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {q.options.map((o) => {
+        const on = value === o.id;
+        const s = snippetFor(q.key, o);
+        return (
+          <button key={o.id} type="button" onClick={() => onPick(o.id)} aria-pressed={on}
+            className={`btn-3d min-w-0 overflow-hidden rounded-2xl border-2 text-left transition-colors ${on ? "border-secondary shade-secondary" : "shade-border hover:border-secondary/60"}`}>
+            <pre className="overflow-x-auto bg-code px-3 py-3 font-mono text-xs leading-5 text-code-foreground sm:text-[13px]">
+              <span className="text-code-keyword">let </span>{s.code.split("//")[0]}<span className="text-code-comment">//{s.code.split("//")[1]}</span>
+            </pre>
+            <div className={`flex gap-2 p-3 text-sm ${on ? "bg-secondary/10" : "bg-card"}`}>
+              <span className="shrink-0">{on ? "✅" : "💬"}</span>
+              <span className="min-w-0">{s.explain}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="space-y-3"><h3 className="text-xl font-semibold">{title}</h3>{children}</section>;
 }
@@ -124,10 +147,11 @@ function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
   const tip = step === 0 ? "Una variable es como una caja con etiqueta: guarda un dato para usarlo después." : stage?.tip;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
-      <header className="mb-6 flex items-center gap-4">
-        <span className="font-display text-2xl font-bold text-primary">🎮 CodePlay</span>
-        <div className="flex flex-1 gap-2">
+    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
+      <header className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:flex md:gap-4">
+        <span className="truncate font-display text-xl font-bold text-primary sm:text-2xl">🎮 CodePlay</span>
+        <button onClick={onLogout} className="shrink-0 text-sm font-semibold text-muted-foreground hover:text-foreground md:order-last">Hola, {user} · Salir</button>
+        <div className="col-span-2 flex gap-1 sm:gap-2 md:flex-1">
           {steps.map((s, i) => (
             <div key={i} className="flex-1">
               <div className={`h-4 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`} />
@@ -135,26 +159,34 @@ function Studio({ user, onLogout }: { user: string; onLogout: () => void }) {
             </div>
           ))}
         </div>
-        <button onClick={onLogout} className="text-sm font-semibold text-muted-foreground hover:text-foreground">Hola, {user} · Salir</button>
       </header>
 
       {step < 4 ? (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="space-y-6 rounded-3xl border-2 bg-card p-6">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0 space-y-6 rounded-3xl border-2 bg-card p-4 sm:p-6">
             {step === 0 ? <>
               <Head n={1} title="¿Qué tipo de juego quieres crear?" sub="Cada género tiene sus propias reglas, como los juegos famosos." />
               <Cards items={games.map((x) => ({ ...x, desc: `Como ${x.inspired}` }))} value={c.category} onPick={(id) => setC({ category: id })} />
             </> : stage && <>
               <Head n={step + 1} title={stage.title} sub={stage.sub} />
               {stage.questions.map((q) => (
-                <Section key={q.key} title={q.title}>
-                  <Cards items={q.options} value={choiceOf(c, q.key)} onPick={(id) => setC((x) => ({ ...x, [q.key]: id }))} renderBg={(o) => o.cls ?? ""} />
+                <Section key={q.key} title={`${q.title} — elige la línea de código correcta`}>
+                  <CodeCards q={q} value={choiceOf(c, q.key)} onPick={(id) => setC((x) => ({ ...x, [q.key]: id }))} />
                 </Section>
               ))}
             </>}
             <Nav step={step} setStep={setStep} ready={ready} />
           </div>
-          <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-6rem)]"><CodePanel code={code} tip={tip} /></div>
+          <div className="min-w-0 space-y-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-auto">
+            {g && (
+              <div className="rounded-3xl border-2 bg-card p-4">
+                <h3 className="mb-1 text-lg font-semibold">👀 Así se ve tu código</h3>
+                <p className="mb-3 text-xs text-muted-foreground">Cada línea que eliges cambia el juego al instante. Lo que aún no eliges usa la primera opción.</p>
+                <GamePreview c={withDefaults(c)} />
+              </div>
+            )}
+            <div className="h-[420px]"><CodePanel code={code} tip={tip} /></div>
+          </div>
         </div>
       ) : (
         <Final c={c} code={code} onBack={() => setStep(3)} onRestart={() => { setC({}); setStep(0); }} />
@@ -167,7 +199,7 @@ function Head({ n, title, sub }: { n: number; title: string; sub: string }) {
   return (
     <div>
       <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase text-accent-foreground">Paso {n}</span>
-      <h2 className="mt-2 text-3xl font-bold">{title}</h2>
+      <h2 className="mt-2 text-2xl font-bold sm:text-3xl">{title}</h2>
       <p className="text-muted-foreground">{sub}</p>
     </div>
   );
@@ -197,21 +229,21 @@ function Final({ c, code, onBack, onRestart }: { c: Choices; code: string; onBac
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-4xl font-bold">🎉 ¡Tu juego está listo!</h2>
+        <h2 className="text-3xl font-bold sm:text-4xl">🎉 ¡Tu juego está listo!</h2>
         <p className="text-muted-foreground">{g?.emoji} {g?.name}, inspirado en {g?.inspired}. Cada cosa que pasa es una línea de tu código.</p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         {qs.map((q) => { const o = pick(c, q.key); return <span key={q.key} className="rounded-full border-2 bg-card px-4 py-2 text-sm"><b>{q.title}:</b> {o?.emoji} {o?.name}</span>; })}
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
         <div className="rounded-3xl border-2 bg-card p-5">
           <h3 className="mb-1 text-xl font-semibold">Vista previa</h3>
           <p className="mb-3 text-sm text-muted-foreground">{(c.category && howTo[c.category]) ?? ""}{c.category !== "trivia" ? wasd : ""}</p>
           <GamePreview c={c} />
         </div>
-        <div className="h-[560px]"><CodePanel code={code} tip="Este es el código completo de tu juego, con comentarios." /></div>
+        <div className="h-[420px] min-w-0 lg:h-[560px]"><CodePanel code={code} tip="Este es el código completo de tu juego, con comentarios." /></div>
       </div>
-      <div className="flex justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <BigButton variant="ghost" onClick={onBack}>Cambiar reglas</BigButton>
         <BigButton onClick={onRestart}>Crear otro juego</BigButton>
       </div>
