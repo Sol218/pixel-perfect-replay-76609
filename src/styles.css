@@ -118,3 +118,18 @@
 @utility scene-aula { background: linear-gradient(180deg, oklch(0.4 0.07 160), oklch(0.32 0.06 160)); }
 @utility scene-ruleta { background: conic-gradient(oklch(0.7 0.18 25), oklch(0.8 0.16 80), oklch(0.72 0.17 140), oklch(0.65 0.15 245), oklch(0.6 0.18 310), oklch(0.7 0.18 25)); }
 @utility road { background: repeating-linear-gradient(180deg, oklch(0.95 0 0) 0 20px, transparent 20px 40px) center / 4px 100% no-repeat, oklch(0.35 0.01 260); }
+
+/* Game juice */
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-12%) } }
+@keyframes spin-y { 0%,100% { transform: scaleX(1) } 50% { transform: scaleX(0.2) } }
+@keyframes pulse-glow { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px var(--accent)) } 50% { transform: scale(1.15); filter: drop-shadow(0 0 12px var(--accent)) } }
+@keyframes twinkle { 0%,100% { opacity: 0.3 } 50% { opacity: 1 } }
+@keyframes drift { from { transform: translateX(0) } to { transform: translateX(-30%) } }
+@utility anim-bob { animation: bob 0.9s ease-in-out infinite; }
+@utility anim-spin { animation: spin-y 1.2s linear infinite; }
+@utility anim-glow { animation: pulse-glow 1.4s ease-in-out infinite; }
+@utility anim-twinkle { animation: twinkle 2s ease-in-out infinite; }
+@utility sprite-shadow { filter: drop-shadow(0 3px 0 color-mix(in oklab, var(--foreground) 45%, transparent)); }
+@utility hero-glow { filter: drop-shadow(0 0 6px var(--card)) drop-shadow(0 3px 0 color-mix(in oklab, var(--foreground) 45%, transparent)); }
+@utility asphalt { background: linear-gradient(90deg, var(--destructive) 0 6px, var(--card) 6px 12px, oklch(0.35 0.01 260) 12px calc(100% - 12px), var(--card) calc(100% - 12px) calc(100% - 6px), var(--destructive) calc(100% - 6px)); }
+@utility asphalt-alt { background: linear-gradient(90deg, var(--card) 0 6px, var(--destructive) 6px 12px, oklch(0.38 0.01 260) 12px calc(100% - 12px), var(--destructive) calc(100% - 12px) calc(100% - 6px), var(--card) calc(100% - 6px)); }
