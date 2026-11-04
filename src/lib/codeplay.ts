@@ -332,3 +332,43 @@ export function buildCode(c: Choices, upTo: number): string {
   }
   return L.join("\n");
 }
+
+/* ---------- Opciones mostradas como código ---------- */
+const varInfo: Record<string, { name: string; what: string }> = {
+  hero: { name: "jugador.icono", what: "Guarda el dibujo (emoji) de tu personaje dentro del objeto jugador." },
+  enemy: { name: "enemigo.icono", what: "Guarda cómo se ve el enemigo dentro de su objeto." },
+  goal: { name: "meta.icono", what: "Guarda cómo se ve la meta a la que debes llegar." },
+  scene: { name: "escena.fondo", what: "Le dice al juego qué fondo dibujar detrás de todo." },
+  movement: { name: "teclas", what: "Un array (lista) con las teclas para ↑ ↓ ← →, en ese orden." },
+  score: { name: "premio", what: "Un objeto con el icono del premio y cuántos puntos suma al tocarlo." },
+  collision: { name: "alChocar", what: "Guarda qué regla se aplica cuando algo te toca." },
+  time: { name: "tiempo", what: "Un número: los segundos que tienes antes de perder." },
+  dots: { name: "puntosPorPuntito", what: "Un número: los puntos que ganas por cada puntito que comes." },
+  shot: { name: "velocidadBala", what: "Un número: qué tan rápido viaja tu disparo." },
+  rivals: { name: "numRivales", what: "Un número: cuántos autos corren contra ti con tus mismas reglas." },
+  length: { name: "pista.largo", what: "Un número: la distancia que hay que recorrer para terminar." },
+  topic: { name: "tema", what: "Un texto (string) que elige de qué tema son las preguntas." },
+  points: { name: "puntosPorAcierto", what: "Un número: los puntos que ganas por cada respuesta correcta." },
+};
+const emojiKeys = new Set(["hero", "enemy", "goal"]);
+
+export function snippetFor(key: string, o: Option): { code: string; explain: string } {
+  const info = varInfo[key] ?? { name: key, what: "Guarda un dato para usarlo después." };
+  let value: string;
+  if (key === "movement") value = `[${dirKeys(o.id).map((k) => `"${k}"`).join(", ")}]`;
+  else if (key === "score") value = `{ icono: "${o.emoji}", puntos: ${o.value ?? 0} }`;
+  else if (emojiKeys.has(key)) value = `"${o.emoji}"`;
+  else if (o.value !== undefined) value = String(o.value);
+  else value = `"${o.id}"`;
+  const extra = o.desc ? ` (${o.desc})` : "";
+  return { code: `${info.name} = ${value};  // ${o.name}`, explain: `${info.what} Con esta línea: ${o.emoji} ${o.name}${extra}.` };
+}
+
+/** Rellena con la primera opción lo que el usuario aún no ha elegido, para poder mostrar la vista previa. */
+export function withDefaults(c: Choices): Choices {
+  const g = gameOf(c);
+  if (!g) return c;
+  const out: Record<string, string | undefined> = { ...c };
+  for (const q of g.stages.flatMap((s) => s.questions)) out[q.key] ??= q.options[0]?.id;
+  return out as Choices;
+}

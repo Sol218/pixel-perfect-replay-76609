@@ -49,3 +49,13 @@ describe("Cuentas", () => {
     expect(iniciarSesion("demo", "0000")).not.toBeNull();
   });
 });
+
+import { snippetFor as _snip, withDefaults as _wd } from "@/lib/codeplay";
+describe("opciones como código", () => {
+  it("las teclas WASD se muestran como un array de teclas", () => {
+    expect(_snip("movement", { id: "wasd", name: "W A S D", emoji: "⌨️" }).code).toContain('["w", "s", "a", "d"]');
+  });
+  it("la vista previa usa la primera opción si falta elegir", () => {
+    expect(_wd({ category: "laberinto" }).time).toBe("t60");
+  });
+});
