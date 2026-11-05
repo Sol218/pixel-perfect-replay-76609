@@ -61,8 +61,12 @@ function Frame({ boxRef, cls, hud, log, overlay, onRetry, children }: {
     </div>
   );
 }
-const Sprite = ({ p, e, size = "text-2xl", dim }: { p: P; e: string; size?: string; dim?: boolean }) =>
-  <span className={`absolute leading-none ${size} ${dim ? "opacity-50" : ""}`} style={pos(p)}>{e}</span>;
+const Sprite = ({ p, e, size = "text-2xl", dim, fx = "sprite-shadow", flip }: { p: P; e: string; size?: string; dim?: boolean; fx?: string; flip?: boolean }) =>
+  <span className={`absolute leading-none ${size} ${dim ? "opacity-50" : ""}`} style={{ ...pos(p), transform: flip ? "scaleX(-1)" : undefined }}>
+    <span className={`inline-block ${fx}`}>{e}</span>
+  </span>;
+const STARS = Array.from({ length: 28 }, (_, i) => ({ x: (i * 97) % W, y: (i * 53) % H, d: (i % 5) * 0.4 }));
+const Stars = () => <>{STARS.map((t, i) => <span key={i} className="anim-twinkle absolute size-1 rounded-full bg-card" style={{ ...pos(t), animationDelay: `${t.d}s` }} />)}</>;
 
 function TouchPad({ c }: { c: Choices }) {
   const [u, d, l, r] = dirKeys(c.movement);
@@ -106,7 +110,7 @@ const coins0 = () => [{ x: 140, y: 172 }, { x: 266, y: 122 }, { x: 396, y: 172 }
 function Platform({ c }: { c: Choices }) {
   const box = useRef<HTMLDivElement>(null);
   const inp = useInput(box);
-  const init = () => ({ p: { x: 16, y: GROUND - S, vy: 0, ground: true }, e: { x: 320, y: GROUND - S, dir: -1, alive: true, back: 0 }, coins: coins0(), pts: 0, lives: 3, inv: 0, end: null as string | null });
+  const init = () => ({ p: { x: 16, y: GROUND - S, vy: 0, ground: true, face: 1 }, e: { x: 320, y: GROUND - S, dir: -1, alive: true, back: 0 }, coins: coins0(), pts: 0, lives: 3, inv: 0, end: null as string | null });
   const st = useRef(init());
   const [log, setLog] = useState("Haz clic en el juego. Salta con ↑ / espacio.");
   const [u, , l, r] = dirKeys(c.movement);
@@ -116,8 +120,8 @@ function Platform({ c }: { c: Choices }) {
     const s = st.current, p = s.p, e = s.e;
     const jump = inp.tap(u) + inp.tap(" ") > 0 || ((inp.held(u) || inp.held(" ")) && p.ground);
     if (s.end) return;
-    if (inp.held(l)) p.x -= 3;
-    if (inp.held(r)) p.x += 3;
+    if (inp.held(l)) { p.x -= 3; p.face = -1; }
+    if (inp.held(r)) { p.x += 3; p.face = 1; }
     if (jump && p.ground) { p.vy = -9.5; p.ground = false; }
     const prevBottom = p.y + S;
     p.vy += 0.5; p.y += p.vy; p.ground = false;
@@ -147,12 +151,15 @@ function Platform({ c }: { c: Choices }) {
   return (
     <Frame boxRef={box} cls={pick(c, "scene")?.cls} log={log} overlay={s.end} onRetry={() => { st.current = init(); setLog("¡A jugar otra vez!"); }}
       hud={<><span>⭐ {s.pts} puntos</span>{rule === "vida" && <span>{"❤️".repeat(Math.max(0, s.lives))}</span>}</>}>
+      {c.scene === "castillo" || c.scene === "subterraneo"
+        ? <><Sprite p={{ x: 400, y: 40 }} e="🌋" size="text-5xl" fx="" /><Sprite p={{ x: 30, y: 60 }} e="🔥" fx="anim-bob" /><Sprite p={{ x: 220, y: 30 }} e="🔥" fx="anim-bob" /></>
+        : <><Sprite p={{ x: 410, y: 14 }} e="☀️" size="text-4xl" fx="anim-glow" /><Sprite p={{ x: 60, y: 24 }} e="☁️" size="text-4xl" fx="" /><Sprite p={{ x: 250, y: 50 }} e="☁️" size="text-3xl" fx="" /><Sprite p={{ x: 20, y: GROUND - 40 }} e="🌳" size="text-4xl" fx="" /><Sprite p={{ x: 330, y: GROUND - 34 }} e="🌷" fx="" /></>}
       <div className="absolute inset-x-0 bottom-0 border-t-4 border-accent-shade bg-accent" style={{ top: `${(GROUND / H) * 100}%` }} />
       {PLATS.map((f, i) => <div key={i} className="absolute h-3 rounded-sm border-2 border-accent-shade bg-accent" style={{ ...pos(f), width: `${(f.w / W) * 100}%` }} />)}
-      <Sprite p={{ x: 444, y: GROUND - 44 }} e="🚩" size="text-4xl" />
-      {s.coins.map((co, i) => <Sprite key={i} p={co} e={sc?.emoji ?? "🪙"} />)}
-      {s.e.alive && <Sprite p={s.e} e={pick(c, "enemy")?.emoji ?? "🍄"} size="text-3xl" />}
-      <Sprite p={s.p} e={pick(c, "hero")?.emoji ?? "🧑‍🔧"} size="text-3xl" dim={s.inv > 0} />
+      <Sprite p={{ x: 444, y: GROUND - 44 }} e="🚩" size="text-4xl" fx="anim-glow" />
+      {s.coins.map((co, i) => <Sprite key={i} p={co} e={sc?.emoji ?? "🪙"} fx="anim-spin" />)}
+      {s.e.alive && <Sprite p={s.e} e={pick(c, "enemy")?.emoji ?? "🍄"} size="text-3xl" fx="anim-bob sprite-shadow" flip={s.e.dir > 0} />}
+      <Sprite p={s.p} e={pick(c, "hero")?.emoji ?? "🧑‍🔧"} size="text-3xl" dim={s.inv > 0} fx={`hero-glow ${s.p.ground ? "" : "anim-bob"}`} flip={s.p.face < 0} />
     </Frame>
   );
 }
@@ -198,8 +205,9 @@ function Maze({ c }: { c: Choices }) {
       {MAZE.flatMap((row, y) => [...row].map((ch, x) =>
         ch === "#" ? <div key={`${x}-${y}`} className={`absolute ${wallCls[scene] ?? wallCls["neon"]}`} style={cell(x, y)} />
         : s.dots.has(`${x},${y}`) ? <div key={`${x}-${y}`} className="absolute grid place-items-center" style={cell(x, y)}><span className="size-1.5 rounded-full bg-accent" /></div> : null))}
-      <div className="absolute grid place-items-center text-2xl" style={cell(goal.x, goal.y)}>{pick(c, "goal")?.emoji ?? "🏁"}</div>
-      <div className="absolute grid place-items-center text-2xl transition-all duration-100" style={cell(s.p.x, s.p.y)}>{pick(c, "hero")?.emoji ?? "😮"}</div>
+      {scene === "neon" && <Stars />}
+      <div className="absolute grid place-items-center text-2xl" style={cell(goal.x, goal.y)}><span className="anim-glow">{pick(c, "goal")?.emoji ?? "🏁"}</span></div>
+      <div className="absolute grid place-items-center text-2xl transition-all duration-100" style={cell(s.p.x, s.p.y)}><span className="hero-glow anim-bob">{pick(c, "hero")?.emoji ?? "😮"}</span></div>
     </Frame>
   );
 }
@@ -251,10 +259,12 @@ function Space({ c }: { c: Choices }) {
   return (
     <Frame boxRef={box} cls={pick(c, "scene")?.cls} log={log} overlay={s.end} onRetry={() => { st.current = init(); setLog("¡Nueva partida!"); }}
       hud={<><span>⭐ {s.pts} · Oleada {s.wave}</span>{rule === "vida" && <span>{"❤️".repeat(Math.max(0, s.lives))}</span>}</>}>
-      {s.aliens.map((a, i) => <Sprite key={i} p={a} e={pick(c, "enemy")?.emoji ?? "👾"} />)}
+      <Stars />
+      {s.aliens.map((a, i) => <Sprite key={i} p={a} e={pick(c, "enemy")?.emoji ?? "👾"} fx="anim-bob sprite-shadow" />)}
       {s.bullets.map((b, i) => <span key={i} className="absolute h-3 w-1 rounded bg-accent" style={pos({ x: b.x + S / 2, y: b.y })} />)}
       {s.bombs.map((b, i) => <span key={i} className="absolute size-2 rounded-full bg-destructive" style={pos({ x: b.x + S / 2, y: b.y })} />)}
-      <Sprite p={{ x: s.x, y: 262 }} e={pick(c, "hero")?.emoji ?? "🚀"} size="text-3xl" dim={s.inv > 0} />
+      <Sprite p={{ x: s.x + 8, y: 288 }} e="🔥" size="text-sm" fx="anim-twinkle" />
+      <Sprite p={{ x: s.x, y: 262 }} e={pick(c, "hero")?.emoji ?? "🚀"} size="text-3xl" dim={s.inv > 0} fx="hero-glow" />
     </Frame>
   );
 }
@@ -262,17 +272,20 @@ function Space({ c }: { c: Choices }) {
 /* ---------- Carreras (Gran Turismo) ---------- */
 const ROAD = { x: 120, w: 240 };
 const RIVAL_CARS = ["🚗", "🚕", "🚙"];
+const LANES = [20, 80, 140, 200];
+const OBST = ["🚧", "🛢️", "🪨", "🔶"];
+const curve = (d: number) => Math.sin(d / 420) * 55 + Math.sin(d / 170) * 15;
+const obstacles0 = (len: number) => Array.from({ length: Math.floor(len / 260) - 1 }, (_, i) => ({ d: 400 + i * 260, x: LANES[(i * 7 + 1) % 4]!, e: OBST[i % 4]! }));
 function Race({ c }: { c: Choices }) {
   const box = useRef<HTMLDivElement>(null);
   const inp = useInput(box);
   const n = pick(c, "rivals")?.value ?? 2, goalD = pick(c, "length")?.value ?? 3000;
-  const lanes: number[] = [140, 200, 260, 320]; const lane = (i: number) => lanes[i] ?? 200;
   const init = () => ({
-    me: { x: lane(0), d: 0, v: 0 }, count: 180, bump: 0, finished: [] as number[], end: null as string | null,
-    rivals: Array.from({ length: n }, (_, i) => ({ x: lane(i + 1), tx: lane(i + 1), d: 0, v: 0, top: 4.6 + Math.random() * 1.6 })),
+    me: { x: LANES[0]!, d: 0, v: 0 }, count: 180, bump: 0, finished: [] as number[], end: null as string | null, obs: obstacles0(goalD),
+    rivals: Array.from({ length: n }, (_, i) => ({ x: LANES[i + 1]!, tx: LANES[i + 1]!, d: 0, v: 0, top: 4.6 + Math.random() * 1.6 })),
   });
   const st = useRef(init());
-  const [log, setLog] = useState("Haz clic en el juego. ↑ acelera, ↓ frena.");
+  const [log, setLog] = useState("Haz clic en el juego. ↑ acelera, ↓ frena. ¡Esquiva los obstáculos!");
   const [u, d, l, r] = dirKeys(c.movement);
   useLoop(() => {
     const s = st.current, me = s.me;
@@ -282,18 +295,22 @@ function Race({ c }: { c: Choices }) {
     if (inp.held(d)) me.v = Math.max(0, me.v - 0.25);
     if (inp.held(l)) me.x -= 3;
     if (inp.held(r)) me.x += 3;
-    me.x = Math.max(ROAD.x, Math.min(ROAD.x + ROAD.w - S, me.x));
+    me.x = Math.max(8, Math.min(ROAD.w - S - 8, me.x));
     me.d += me.v;
     s.rivals.forEach((rv) => {
       rv.v = Math.min(rv.top, rv.v + 0.07);
+      const ahead = s.obs.find((o) => o.d > rv.d && o.d - rv.d < 140 && Math.abs(o.x - rv.tx) < S);
+      if (ahead) rv.tx = LANES.find((ln) => Math.abs(ln - ahead.x) >= S && !s.obs.some((o) => Math.abs(o.d - ahead.d) < 30 && Math.abs(o.x - ln) < S)) ?? rv.tx;
+      else if (Math.random() < 0.004) rv.tx = LANES[Math.floor(Math.random() * 4)]!;
+      rv.x += Math.sign(rv.tx - rv.x) * Math.min(2, Math.abs(rv.tx - rv.x));
+      if (s.obs.some((o) => Math.abs(o.x - rv.x) < S * 0.7 && Math.abs(o.d - rv.d) < S * 0.6)) rv.v *= 0.6;
       rv.d += rv.v;
-      if (Math.random() < 0.006) rv.tx = lane(Math.floor(Math.random() * 4));
-      rv.x += Math.sign(rv.tx - rv.x) * Math.min(1.5, Math.abs(rv.tx - rv.x));
     });
     if (s.bump > 0) s.bump--;
     if (s.bump === 0 && s.rivals.some((rv) => Math.abs(rv.x - me.x) < S * 0.8 && Math.abs(rv.d - me.d) < S)) {
       s.bump = 40; me.v /= 2; setLog("if (toca(piloto, rival)) → velocidad = velocidad / 2 💥");
     }
+    if (s.bump === 0) { const o = s.obs.find((ob) => Math.abs(ob.x - me.x) < S * 0.75 && Math.abs(ob.d - me.d) < S * 0.6); if (o) { s.bump = 40; me.v *= 0.3; setLog(`if (toca(piloto, obstaculo ${o.e})) → velocidad *= 0.3 🚧`); } }
     s.rivals.forEach((rv, i) => { if (rv.d >= goalD && !s.finished.includes(i)) s.finished.push(i); });
     if (me.d >= goalD) {
       const place = s.finished.length + 1;
@@ -303,13 +320,22 @@ function Race({ c }: { c: Choices }) {
   });
   const s = st.current, me = s.me;
   const place = 1 + s.rivals.filter((rv) => rv.d > me.d).length;
+  const at = (dd: number) => 230 - (dd - me.d);
+  const sx = (x: number, dd: number) => ROAD.x + curve(dd) + x;
+  const segs = Array.from({ length: 16 }, (_, i) => { const y = i * 20 - (me.d % 20); const wd = me.d + 230 - y; return { y, wd }; });
   return (
     <Frame boxRef={box} cls={pick(c, "scene")?.cls} log={log} overlay={s.end} onRetry={() => { st.current = init(); setLog("¡Nueva carrera!"); }}
       hud={<><span>🏁 Lugar {place}/{n + 1}</span><span>{Math.round(me.v * 30)} km/h</span></>}>
-      <div className="road absolute inset-y-0" style={{ left: `${(ROAD.x / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, backgroundPositionY: `${me.d % 40}px, 0` }} />
-      {goalD - me.d < 260 && <div className="absolute h-3 bg-[repeating-linear-gradient(90deg,var(--foreground)_0_8px,var(--card)_8px_16px)]" style={{ left: `${(ROAD.x / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, top: `${((230 - (goalD - me.d)) / H) * 100}%` }} />}
-      {s.rivals.map((rv, i) => { const y = 230 - (rv.d - me.d); return y > -S && y < H ? <Sprite key={i} p={{ x: rv.x, y }} e={RIVAL_CARS[i] ?? "🚗"} size="text-3xl" /> : null; })}
-      <Sprite p={{ x: me.x, y: 230 }} e={pick(c, "hero")?.emoji ?? "🏎️"} size="text-3xl" dim={s.bump > 0} />
+      {segs.map(({ y, wd }, i) => (
+        <div key={i} className={`absolute ${Math.floor(wd / 40) % 2 ? "asphalt" : "asphalt-alt"}`} style={{ left: `${((ROAD.x + curve(wd)) / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, top: `${(y / H) * 100}%`, height: `${(21 / H) * 100}%` }}>
+          {Math.floor(wd / 20) % 2 === 0 && <span className="absolute left-1/2 top-0 h-full w-1 -translate-x-1/2 bg-card/80" />}
+        </div>))}
+      {segs.filter((_, i) => i % 4 === 1).map(({ y, wd }, i) => <Sprite key={`t${i}`} p={{ x: ROAD.x + curve(wd) - 40, y }} e={i % 2 ? "🌴" : "🌲"} fx="" />)}
+      {segs.filter((_, i) => i % 4 === 3).map(({ y, wd }, i) => <Sprite key={`u${i}`} p={{ x: ROAD.x + curve(wd) + ROAD.w + 10, y }} e={i % 2 ? "🏁" : "🌳"} fx="" />)}
+      {goalD - me.d < 260 && <div className="absolute h-3 bg-[repeating-linear-gradient(90deg,var(--foreground)_0_8px,var(--card)_8px_16px)]" style={{ left: `${((ROAD.x + curve(goalD)) / W) * 100}%`, width: `${(ROAD.w / W) * 100}%`, top: `${(at(goalD) / H) * 100}%` }} />}
+      {s.obs.map((o, i) => { const y = at(o.d); return y > -S && y < H ? <Sprite key={`o${i}`} p={{ x: sx(o.x, o.d), y }} e={o.e} /> : null; })}
+      {s.rivals.map((rv, i) => { const y = at(rv.d); return y > -S && y < H ? <Sprite key={i} p={{ x: sx(rv.x, rv.d), y }} e={RIVAL_CARS[i] ?? "🚗"} size="text-3xl" flip /> : null; })}
+      <Sprite p={{ x: sx(me.x, me.d), y: 230 }} e={pick(c, "hero")?.emoji ?? "🏎️"} size="text-3xl" dim={s.bump > 0} fx={`hero-glow ${me.v > 5 ? "anim-bob" : ""}`} flip />
       <div className="absolute inset-x-2 top-2 h-2 rounded-full bg-card/60"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (me.d / goalD) * 100)}%` }} /></div>
       {s.count > 0 && <div className="absolute inset-0 grid place-items-center font-display text-7xl font-bold text-accent">{Math.ceil(s.count / 60)}</div>}
     </Frame>
@@ -356,14 +382,14 @@ function Trivia({ c }: { c: Choices }) {
         <div className="absolute inset-0 flex flex-col gap-2 p-3">
           <div className="h-3 overflow-hidden rounded-full bg-card/50"><div className={`h-full ${left < 4 ? "bg-destructive" : "bg-accent"}`} style={{ width: `${(left / limit) * 100}%` }} /></div>
           <div className="flex items-center gap-3 rounded-2xl bg-card p-3 text-card-foreground">
-            <span className="text-3xl">{pick(c, "hero")?.emoji}</span>
+            <span className="anim-bob hero-glow inline-block text-4xl">{pick(c, "hero")?.emoji}</span>
             <p className="font-display text-base font-semibold leading-tight sm:text-lg">{q.q}</p>
             <span className="ml-auto font-display text-xl">{Math.ceil(left)}s</span>
           </div>
           <div className="grid flex-1 grid-cols-2 gap-2">
             {q.opts.map((o, j) => {
               const state = picked ? (o === q.right ? "ring-4 ring-card" : "opacity-40") : "";
-              return <button key={o} onClick={() => answer(o)} className={`rounded-xl font-display text-sm font-semibold text-primary-foreground sm:text-base ${answerCls[j]} ${state}`}>{o}</button>;
+              return <button key={o} onClick={() => answer(o)} className={`btn-3d shade-border rounded-xl border-2 border-foreground/30 font-display text-sm font-semibold text-primary-foreground sm:text-base ${answerCls[j]} ${state}`}>{o}</button>;
             })}
           </div>
         </div>
